@@ -73,21 +73,6 @@ class HullDesigner:
 
         lbl_opts = {"bg": THEME_PANEL_BG, "fg": THEME_TEXT, "font": ("MS Sans Serif", 10)}
 
-        # --- EXPORT ---
-        self.btn_export = tk.Button(self.controls, text="EXPORT", command=self.run_generator,
-                                    bg=THEME_PANEL_BG, relief=tk.RAISED, bd=3, font=("MS Sans Serif", 9, "bold"), pady=5)
-        self.btn_export.pack(pady=10, fill=tk.X)
-
-        # --- OUTPUT PATH ---
-        grp_path = tk.LabelFrame(self.controls, text="Output Location", bg=THEME_PANEL_BG, font=("MS Sans Serif", 9))
-        grp_path.pack(fill=tk.X, pady=5, padx=5)
-
-        self.ent_path = tk.Entry(grp_path, textvariable=self.var_save_path, bg="white", width=15)
-        self.ent_path.pack(fill=tk.X, padx=5, pady=2)
-
-        tk.Button(grp_path, text="Select Folder...", command=self.select_output_folder,
-                  bg=THEME_PANEL_BG, relief=tk.RAISED, bd=2).pack(fill=tk.X, padx=5, pady=5)
-
         # --- PRESET BUTTON ---
         tk.Button(self.controls, text="Load Preset (100m)", command=self.load_preset1,
                   bg=THEME_PANEL_BG, relief=tk.RAISED, bd=2).pack(pady=5, fill=tk.X)
@@ -130,14 +115,30 @@ class HullDesigner:
         tk.Label(grp_dim, text="Undercut Layers:", **lbl_opts).pack(anchor="w")
         tk.Spinbox(grp_dim, from_=0, to=20, textvariable=self.var_undercut, width=10).pack(pady=2)
 
-        # --- NEW: Armor Thickness ---
+        # --- ARMOR THICKNESS ---
         self.var_thickness = tk.IntVar(value=2)
         tk.Label(grp_dim, text="Armor Thickness:", **lbl_opts).pack(anchor="w")
         tk.Spinbox(grp_dim, from_=1, to=5, textvariable=self.var_thickness, width=10).pack(pady=2)
         # ----------------------------
 
+        # --- OUTPUT PATH ---
+        grp_path = tk.LabelFrame(self.controls, text="Output Location", bg=THEME_PANEL_BG, font=("MS Sans Serif", 9))
+        grp_path.pack(fill=tk.X, pady=5, padx=5)
+
+        self.ent_path = tk.Entry(grp_path, textvariable=self.var_save_path, bg="white", width=15)
+        self.ent_path.pack(fill=tk.X, padx=5, pady=2)
+
+        tk.Button(grp_path, text="Select Folder...", command=self.select_output_folder,
+        bg=THEME_PANEL_BG, relief=tk.RAISED, bd=2).pack(fill=tk.X, padx=5, pady=5)
+
         tk.Checkbutton(grp_dim, text="Generate Floor", variable=self.var_floor, bg=THEME_PANEL_BG).pack(anchor="w", pady=5)
 
+        # --- EXPORT ---
+        self.btn_export = tk.Button(self.controls, text="EXPORT", command=self.run_generator,
+                                    bg=THEME_PANEL_BG, relief=tk.RAISED, bd=3, font=("MS Sans Serif", 9, "bold"), pady=5)
+        self.btn_export.pack(pady=10, fill=tk.X)
+
+        # --- USAGE INSTRUCTIONS
         self.lbl_info = tk.Label(self.controls, text="L-Click: Add Point\nR-Click: Undo\n\nDraw on either side\nof the center line.",
                                  justify=tk.LEFT, bg=THEME_PANEL_BG, fg="#444")
         self.lbl_info.pack(pady=15)
@@ -146,7 +147,7 @@ class HullDesigner:
         self.lbl_warning = tk.Label(self.controls, text="", fg="red", bg=THEME_PANEL_BG, font=("Arial", 10, "bold"))
         self.lbl_warning.pack(pady=5)
 
-        self.lbl_cursor = tk.Label(self.controls, text="Cursor: -", width=25, bg=THEME_PANEL_BG, font=("Courier New", 9))
+        self.lbl_cursor = tk.Label(self.controls, text="Width at Cursor: -\nLength at Cursor: -", width=25, bg=THEME_PANEL_BG, font=("Courier New", 9))
         self.lbl_cursor.pack(side=tk.BOTTOM, pady=5)
 
         self.canvas_frame = tk.Frame(self.main_container, bg="black", bd=2, relief=tk.SUNKEN)
@@ -326,8 +327,9 @@ class HullDesigner:
 
     def update_cursor(self, event):
         gx, gz = self.to_grid(event.x, event.y)
-        width_m = int(abs(gx)) * 2 + 1
-        self.lbl_cursor.config(text=f"Width at Cursor: {width_m}m")
+        width_m, length_m = int(abs(gx)) * 2 + 1, int(abs(gz))
+        max_places = max(len(str(self.var_limit_length.get())), len(str(self.offset_y)))
+        self.lbl_cursor.config(text=f"Width at Cursor: {width_m:0>{max_places}}m\nLength at Cursor: {length_m:0>{max_places}}m")
 
     def update_stats(self):
         if not self.points:
@@ -424,7 +426,7 @@ class BlueprintGenerator:
         self.do_floor = do_floor
         self.save_path = save_path
         self.material = material
-        self.thickness = thickness # <--- ArmorTheckness
+        self.thickness = thickness # <--- Armor Thickness
         self.placements = []
 
         # Initialize empty dictionaries (No hardcoding!)
